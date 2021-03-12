@@ -2,6 +2,7 @@
 // Created by akim on 06.03.2021.
 //
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -17,6 +18,7 @@ struct Node {
     }
 };
 Node* root = nullptr, *minRoot = nullptr;
+vector<Node*> leftLeaves, rightLeaves;
 int maxMSL = -1;
 
 void insert(long long value) {
@@ -182,73 +184,54 @@ Node* findCenter(int& l1, int& l2, Node* left, Node* right, Node* T) {
     }
     return center;
 }
-Node* findEdge(Node* T, int& length) {
-    while(T->Left || T->Right) {
-        length++;
-        if(!T->Left || (T->Right && T->Right->height > T->Left->height))
-            T = T->Right;
-        else
-            T = T->Left;
-    }
-    return T;
-}
 
-long long min4(long long  a, long long b, long long c, long long d) {
-    return min(a, min(b, min(c, d)));
+void findLeaves(Node* T, vector<Node*>& leaves) {
+    if(!T)
+        return;
+    if(!T->Left && !T->Right)
+        leaves.push_back(T);
+    findLeaves(T->Left, leaves);
+    findLeaves(T->Right, leaves);
 }
-
-long long min3(long long a, long long b, long long c) {
-    return min(a, min(b, c));
-}
-
 
 void findEdges(int& l1, int& l2, Node* &leftEdge, Node* &rightEdge, Node* T) {
     if(!T->Left)
-        leftEdge = T;
+        leftLeaves.push_back(T);
     else
-        leftEdge = findEdge(T->Left, ++l1);
+        findLeaves(T->Left, leftLeaves);
     if(!T->Right)
-        rightEdge = T;
+        rightLeaves.push_back(T);
     else
-        rightEdge = findEdge(T->Right, ++l2);
+        findLeaves(T->Right, rightLeaves);
 
-    if(leftEdge->level == rightEdge->level) {
-        long long sum1, sum2, sum3 = INT64_MAX, sum4 = INT64_MAX, minimum;
-        sum1 = leftEdge->key + rightEdge->Father->key;
-        sum2 = rightEdge->key + leftEdge->Father->key;
-        Node* grandadLeft = leftEdge->Father->Father, *grandadRight = rightEdge->Father->Father;
+    long long minSum = INT64_MAX;
+    for(auto & lLeaf : leftLeaves) {
+        for(auto & rLeaf : rightLeaves) {
+            l1 = lLeaf->depth - T->depth;
+            l2 = rLeaf->depth - T->depth;
 
-        if(grandadLeft && grandadRight && grandadLeft->Left && grandadRight->Left) {
-            sum3 = leftEdge->key + grandadRight->Left->key;
-            sum4 = rightEdge->key + grandadLeft->Left->key;
-            minimum = min4(sum1, sum2, sum3, sum4);
-        }
-        else if(grandadLeft && grandadLeft->Left) {
-            sum4 = rightEdge->key + grandadLeft->Left->key;
-            minimum = min3(sum1, sum2, sum4);
-        }
-        else if(grandadRight && grandadRight->Left) {
-            sum3 = leftEdge->key + grandadRight->Left->key;
-            minimum = min3(sum1, sum2, sum3);
-        }
-        else
-            minimum = min(sum1, sum2);
-
-        if(minimum == sum1 || minimum == sum3) {
-            if (minimum == sum1)
-                rightEdge = rightEdge->Father;
-            else
-                rightEdge = grandadRight->Left;
-            l2--;
-        }
-        else {
-            if (minimum == sum2)
-                leftEdge = leftEdge->Father;
-            else
-                leftEdge = grandadLeft->Left;
-            l1--;
+            if(lLeaf->level != rLeaf->level && lLeaf->key + rLeaf->key < minSum && l1 + l2 == maxMSL) {
+                minSum = lLeaf->key + rLeaf->key;
+                leftEdge = lLeaf, rightEdge = rLeaf;
+            }
+            else if(lLeaf->level == rLeaf->level && l1 + l2 - 1 == maxMSL) {
+                if (lLeaf->Father->key + rLeaf->key < rLeaf->Father->key + lLeaf->key) {
+                    if (rLeaf->key + lLeaf->Father->key < minSum) {
+                        minSum = rLeaf->key + lLeaf->Father->key;
+                        leftEdge = lLeaf->Father;
+                        rightEdge = rLeaf;
+                    }
+                }
+                else if (lLeaf->key + rLeaf->Father->key < minSum) {
+                    minSum = lLeaf->key + rLeaf->Father->key;
+                    rightEdge = rLeaf->Father;
+                    leftEdge = lLeaf;
+                }
+            }
         }
     }
+    l1 = leftEdge->depth - T->depth;
+    l2 = rightEdge->depth - T->depth;
 }
 
 void processTree() {
