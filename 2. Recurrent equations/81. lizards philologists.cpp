@@ -17,7 +17,8 @@ string toString(int c) {
 }
 
 int main() {
-    int N, K;
+    int N;
+    unsigned long long K;
     cin >> N >> K;
 
     if(N == 1) {
@@ -37,7 +38,7 @@ int main() {
         dp[i][7] = dp[i - 1][3] + dp[i - 1][4] + dp[i - 1][5];
         dp[i][8] = dp[i - 1][6] + dp[i - 1][7];
     }
-    cout << dp[N - 2][0] << endl;
+
     unsigned long long sum = 0;
     int i = N - 2, j = 0;
     while (j < 9 && sum + dp[i][j] < K) {
@@ -50,7 +51,7 @@ int main() {
     while(i > 0 && sum != K) {
         i--;
         if(j == 0 || j == 3 || j == 6)
-           left = 0, right = 3;
+            left = 0, right = 3;
         else if(j == 2 || j == 5)
             left = 6, right = 9;
         else if(j == 1)
