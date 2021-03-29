@@ -6,8 +6,8 @@
 using namespace std;
 
 int main() {
-    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/input.txt", "r", stdin);
-    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/output.txt", "w", stdout);
+    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/input.txt", "r", stdin);
+    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/output.txt", "w", stdout);
 
     int n, m, new_len;
     string city1, city2;

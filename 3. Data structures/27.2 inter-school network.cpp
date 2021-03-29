@@ -179,7 +179,7 @@ void printAugmentation() {
 }
 
 int main() {
-    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/input.txt","r", stdin);
+    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/input.txt","r", stdin);
     int n, j = -1;
     cin >> n;
     used = new bool[n]{false};

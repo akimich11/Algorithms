@@ -70,8 +70,8 @@ bool processTree() {
 }
 
 int main() {
-    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/bst.in", "r", stdin);
-    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/bst.out", "w", stdout);
+    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/bst.in", "r", stdin);
+    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/bst.out", "w", stdout);
 
     if (processTree())
         printf("YES");

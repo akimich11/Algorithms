@@ -40,8 +40,8 @@ int is_right(string s) {
 }
 int main()
 {
-    ifstream fin("/home/akim/Other/C++/clion-workspace/Algorithms/tests/input.txt");
-    ofstream fout("/home/akim/Other/C++/clion-workspace/Algorithms/tests/output.txt");
+    ifstream fin("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/input.txt");
+    ofstream fout("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/output.txt");
     stack = new char[1000002];
     string s;
     fin >> s;

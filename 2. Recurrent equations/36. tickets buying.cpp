@@ -10,8 +10,8 @@ int min3(int a, int b, int c) {
 
 
 int main() {
-    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/input.txt", "r", stdin);
-    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/output.txt", "w", stdout);
+    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/input.txt", "r", stdin);
+    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/output.txt", "w", stdout);
     ios_base::sync_with_stdio(false);
     cin.tie(nullptr);
 

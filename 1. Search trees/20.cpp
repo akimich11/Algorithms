@@ -250,8 +250,8 @@ void processTree() {
 }
 
 int main() {
-    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/in.txt", "r", stdin);
-    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/out.txt", "w", stdout);
+    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/in.txt", "r", stdin);
+    freopen("/home/akim/Other/C++/clion-workspace/Algorithms/0. tests/out.txt", "w", stdout);
     long long node;
     cin >> node;
     root = new Node(node);
