@@ -3,114 +3,208 @@
 //
 #include <iostream>
 #include <vector>
-#include <list>
-#include <stack>
-#define NIL -1
+#include <unordered_set>
 
 using namespace std;
 
+static int current_color = 0;
 
-const int MAX = 100;
-vector<int> g[MAX];
-bool used[MAX];
-vector<int> component;
+struct vertex {
+    int index, color;
 
-void dfs(int v) {
-    used[v] = true;
-    component.push_back(v);
-    for (int to : g[v])
-        if (!used[to])
-            dfs(to);
-}
-void findCC(int n) {
-    for (int i = 1; i <= n; ++i)
-        used[i] = false;
-    for (int i = 1; i <= n; ++i)
-        if (!used[i]) {
-            component.clear();
-            dfs(i);
-
-            cout << "Component:";
-            for (int j : component)
-                cout << ' ' << j;
-            cout << endl;
-        }
-}
-
-class Graph {
-    int V;
-    list<int> *adj;
-    void SCCUtil(int u, int disc[], int low[], stack<int> *st, bool stackMember[]) {
-        static int time = 0;
-
-        disc[u] = low[u] = ++time;
-        st->push(u);
-        stackMember[u] = true;
-
-        list<int>::iterator i;
-        for (i = adj[u].begin(); i != adj[u].end(); ++i) {
-            int v = *i;
-            if (disc[v] == -1) {
-                SCCUtil(v, disc, low, st, stackMember);
-                low[u]  = min(low[u], low[v]);
-            }
-            else if (stackMember[v])
-                low[u]  = min(low[u], disc[v]);
-        }
-        int w;
-        if (low[u] == disc[u]) {
-            while (st->top() != u) {
-                w = st->top();
-                cout << w << " ";
-                stackMember[w] = false;
-                st->pop();
-            }
-            w = (int) st->top();
-            cout << w << "\n";
-            stackMember[w] = false;
-            st->pop();
-        }
-    }
-
-public:
-    explicit Graph(int V) {
-        this->V = V;
-        adj = new list<int>[V + 1];
-    }
-    void addEdge(int v, int w) { adj[v].push_back(w); }
-    void SCC() {
-        int *disc = new int[V + 1];
-        int *low = new int[V + 1];
-        bool *stackMember = new bool[V + 1];
-        auto *st = new stack<int>();
-
-        for (int i = 1; i <= V; i++) {
-            disc[i] = NIL;
-            low[i] = NIL;
-            stackMember[i] = false;
-        }
-
-        for (int i = 1; i <= V; i++)
-            if (disc[i] == NIL)
-                SCCUtil(i, disc, low, st, stackMember);
+    explicit vertex(int i) {
+        index = i;
+        color = -1;
     }
 };
+vector<vector<vertex*>> graph, g_transposed, components;
+vector<int> order;
+vector<vertex*> all_vertexes;
+
+vector<pair<int, unordered_set<int>>> cond;
+unordered_set<int>* cond_transposed;
+vector<int> sources, sinks, isolated_vertexes, paired_sources, paired_sinks;
+
+bool* used;
+void makeUnused(int n) {
+    for(int i = 0; i < n; ++i)
+        used[i] = false;
+}
+
+void dfs1(vertex* v) {
+    used[v->index] = true;
+    for (auto& to : graph[v->index])
+        if (!used[to->index])
+            dfs1(to);
+    order.push_back(v->index);
+}
+void dfs2 (vertex* v) {
+    used[v->index] = true;
+    components[current_color].push_back(v);
+    v->color = current_color;
+    for (auto& to : g_transposed[v->index])
+        if (!used[to->index])
+            dfs2(to);
+}
+void createCondensation(int n) {
+    int cc_number = 0;
+    for (auto& i : all_vertexes)
+        if (!used[i->index]) {
+            dfs1(i);
+            cc_number++;
+        }
+    cout << cc_number << '\n';
+    makeUnused(n);
+    for (auto& i : all_vertexes) {
+        int v = order[n - 1 - i->index];
+        if (!used[v]) {
+            dfs2(all_vertexes[v]);
+            current_color++;
+        }
+    }
+    cond.reserve(current_color);
+    cond_transposed = new unordered_set<int>[current_color];
+    sources.reserve(current_color);
+    sinks.reserve(current_color);
+    isolated_vertexes.reserve(current_color);
+    for (int i = 0; i < current_color; ++i) {   //компоненты сильной связности
+        cond[i].second.reserve(current_color);
+        vertex* leader = components[i][0];
+        for(vertex*& v : components[i])         //вершины в компоненте
+            for (vertex*& to : graph[v->index]) //смежные вершины
+                if (v->color != to->color) {
+                    cond[i].second.insert(to->color);
+                    cond_transposed[to->color].insert(i);
+                }
+        cond[i].first = leader->index + 1;
+        if(cond[i].second.empty() && !cond_transposed[i].empty())
+            sinks.push_back(i);
+        else if(!cond[i].second.empty() && cond_transposed[i].empty())
+            sources.push_back(i);
+        else
+            isolated_vertexes.push_back(i);
+    }
+}
+
+int s, t, q, p, w;
+bool is_sink(int v) {
+    return cond[v].second.empty() && !cond_transposed[v].empty();
+}
+void findPair(int& x, bool& sink_not_found) {
+    if(used[x])
+        return;
+    if (is_sink(x)) {
+        w = x;
+        sink_not_found = false;
+    }
+    used[x] = true;
+    for(int y : cond[x].second)
+        if(sink_not_found)
+            findPair(y, sink_not_found);
+}
+void makePairs(int n) {
+    makeUnused(n);
+    paired_sources.reserve(n);
+    paired_sinks.reserve(n);
+    bool sink_not_found;
+    for(int source : sources) {
+        w = 0;
+        sink_not_found = true;
+        findPair(source, sink_not_found);
+        if(w) {
+            paired_sources.push_back(source);
+            paired_sinks.push_back(w);
+            p++;
+        }
+    }
+    for(int source : sources)
+        if(!used[source])
+            paired_sources.push_back(source);
+    s = paired_sources.size();
+    for(int sin : sinks)
+        if(!used[sin])
+            paired_sinks.push_back(sin);
+    t = paired_sinks.size();
+    q = isolated_vertexes.size();
+}
+
+void printAugmentation() {
+    cout << max(s + q, t + q) << '\n';
+    if (s <= t && s) {
+        for (int i = 0; i < p - 1; i++)
+            cout << cond[paired_sinks[i]].first << ' ' << cond[paired_sources[i + 1]].first << '\n';
+        for (int i = p; i < s; i++)
+            cout << cond[paired_sinks[i]].first << ' ' << cond[paired_sources[i]].first << '\n';
+        if (!q && s == t)
+            cout << cond[paired_sinks[p - 1]].first << ' ' << cond[paired_sources[0]].first << '\n';
+        if (s < t)
+            cout << cond[paired_sinks[p - 1]].first << ' ' << cond[paired_sinks[s]].first << '\n';
+
+        for (int i = s; i < t - 1; i++)
+            cout << cond[paired_sinks[i]].first << ' ' << cond[paired_sinks[i + 1]].first << '\n';
+
+        if (!q && s < t)
+            cout << cond[paired_sinks[t - 1]].first << ' ' << cond[paired_sources[0]].first << '\n';
+    }
+
+    else if (s > t && t) {
+        for (int i = 0; i < p - 1; i++)
+            cout << cond[paired_sinks[i]].first << ' ' << cond[paired_sources[i + 1]].first << '\n';
+        for (int i = p; i < t; i++)
+            cout << cond[paired_sinks[i]].first << ' ' << cond[paired_sources[i]].first << '\n';
+        if (!q && s == t)
+            cout << cond[paired_sinks[p - 1]].first << ' ' << cond[paired_sources[0]].first << '\n';
+        cout << cond[paired_sources[p - 1]].first << ' ' << cond[paired_sources[t]].first << '\n';
+        for (int i = t; i < s - 1; i++)
+            cout << cond[paired_sources[i]].first << ' ' << cond[paired_sources[i + 1]].first << '\n';
+        if (!q)
+            cout << cond[paired_sinks[t - 1]].first << ' ' << cond[paired_sources[0]].first << '\n';
+    }
+
+    else if (q && t) {
+        if (s == t)
+            cout << cond[paired_sinks[p - 1]].first << ' ' << cond[isolated_vertexes[0]].first << '\n';
+        else
+            cout << cond[paired_sinks[t - 1]].first << ' ' << cond[isolated_vertexes[0]].first << '\n';
+        for (int i = 0; i < q - 1; i++)
+            cout << cond[isolated_vertexes[i]].first << ' ' << cond[isolated_vertexes[i + 1]].first << '\n';
+        cout << cond[isolated_vertexes[q - 1]].first << ' ' << cond[paired_sources[0]].first << '\n';
+    }
+
+    else if (q && !t) {
+        for (int i = 0; i < q - 1; i++)
+            cout << cond[isolated_vertexes[i]].first << ' ' << cond[isolated_vertexes[i + 1]].first << '\n';
+        cout << cond[isolated_vertexes[q - 1]].first << ' ' << cond[isolated_vertexes[0]].first << '\n';
+    }
+}
 
 int main() {
     freopen("/home/akim/Other/C++/clion-workspace/Algorithms/tests/input.txt","r", stdin);
     int n, j = -1;
     cin >> n;
-    Graph g1(n);
-    for (int i = 1; i <= n; ++i) {
+    used = new bool[n]{false};
+    graph.reserve(n);
+    g_transposed.reserve(n);
+    components.reserve(n);
+    all_vertexes.reserve(n);
+    for (int i = 0; i < n; ++i) {
+        graph[i].reserve(n);
+        g_transposed[i].reserve(n);
+        components[i].reserve(n);
+        all_vertexes.push_back(new vertex(i));
+    }
+    for (int i = 0; i < n; ++i) {
         while(true) {
             cin >> j;
             if(!j)
                 break;
-            g1.addEdge(i, j);
-            g[i].push_back(j);
+            graph[i].push_back(all_vertexes[j - 1]);
+            g_transposed[j - 1].push_back(all_vertexes[i]);
         }
     }
-    findCC(n);
-    g1.SCC();
+    createCondensation(n);
+    makePairs(n);
+    printAugmentation();
+
     return 0;
 }
